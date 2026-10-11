@@ -1,0 +1,646 @@
+<title>Corrente Contínua</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: bancada de laboratório — barra lateral com os temas do módulo, área de trabalho com teoria + instrumento (calculadora) + exercício */
+:root{
+  --bg:#EDF0EC; --surface:#FFFFFF; --sunk:#F5F7F4; --ink:#1B2420; --muted:#5A6660; --line:#CDD4CE;
+  --accent:#B5541C; --accent-ink:#8A3D12; --accent-soft:#F6E4D8;
+  --pcb:#1F5C46; --pcb-soft:#DDEBE4; --ok:#2C7546; --ok-soft:#DCEFE2; --bad:#B3261E; --bad-soft:#F8E0DE;
+  --display:"Familjen Grotesk","Arial Narrow",Arial,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#19201D; --sunk:#151B18; --ink:#E3EAE6; --muted:#9AA59F; --line:#2E3934;
+  --accent:#E8894A; --accent-ink:#F3A877; --accent-soft:#3A2518;
+  --pcb:#62B391; --pcb-soft:#1C3229; --ok:#72CC90; --ok-soft:#1A3324; --bad:#F2887E; --bad-soft:#3A1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#19201D; --sunk:#151B18; --ink:#E3EAE6; --muted:#9AA59F; --line:#2E3934;
+  --accent:#E8894A; --accent-ink:#F3A877; --accent-soft:#3A2518;
+  --pcb:#62B391; --pcb-soft:#1C3229; --ok:#72CC90; --ok-soft:#1A3324; --bad:#F2887E; --bad-soft:#3A1C1A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:24px 64px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.65rem;font-weight:700}
+h3{font-size:1.12rem;font-weight:600}
+p{margin:0;max-width:66ch}
+.mono,code{font-family:var(--mono);font-variant-numeric:tabular-nums}
+code{font-size:.9em;background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:0 .3em}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:20px;border-bottom:2px solid var(--ink);margin-bottom:24px}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink)}
+.who{font-size:.9rem;color:var(--muted);text-align:right}
+.who b{color:var(--ink)}
+
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px;align-items:start}
+nav.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:2px}
+nav.side button{all:unset;cursor:pointer;display:grid;grid-template-columns:2.2em 1fr;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--muted);font-size:.95rem}
+nav.side button .n{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+nav.side button:hover{background:var(--surface);color:var(--ink)}
+nav.side button[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:inset 3px 0 0 var(--accent)}
+nav.side button[aria-current="true"] .n{color:var(--accent-ink)}
+nav.side button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.score{margin-top:14px;padding:12px;border:1px dashed var(--line);border-radius:8px;font-size:.85rem;color:var(--muted)}
+.score b{font-family:var(--mono);color:var(--pcb);font-size:1.1rem}
+
+section.topic{display:flex;flex-direction:column;gap:22px}
+.lead{font-size:1.06rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel.tool{border-top:3px solid var(--pcb)}
+.panel.ex{border-top:3px solid var(--accent)}
+.tag{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel.tool .tag{color:var(--pcb)} .panel.ex .tag{color:var(--accent-ink)}
+ul.facts{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px;max-width:66ch}
+.formula{font-family:var(--mono);font-size:1.25rem;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;text-align:center;overflow-x:auto}
+.formula small{display:block;font-size:.78rem;color:var(--muted);margin-top:4px;font-family:var(--body)}
+
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld label{font-size:.82rem;color:var(--muted)}
+.ctl{display:flex}
+input,select{font:inherit;font-family:var(--mono);font-size:.95rem;color:var(--ink);background:var(--sunk);border:1px solid var(--line);padding:7px 9px;border-radius:6px;min-width:0}
+.ctl input{width:7.5em;border-radius:6px 0 0 6px}
+.ctl select{border-radius:0 6px 6px 0;border-left:0;background:var(--surface)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.btn{font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--surface);padding:7px 14px;border-radius:6px}
+button.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.btn:hover{filter:brightness(1.15)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;flex-wrap:wrap}
+.seg button{font:inherit;font-size:.88rem;border:0;background:var(--surface);color:var(--muted);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--pcb);color:var(--surface);font-weight:700}
+
+.readout{background:var(--ink);color:var(--bg);border-radius:8px;padding:12px 16px;font-family:var(--mono);display:flex;flex-direction:column;gap:2px}
+.readout .big{font-size:1.7rem;font-weight:600;letter-spacing:.01em}
+.readout .sub{font-size:.82rem;opacity:.75}
+
+.fb{font-size:.92rem;padding:8px 12px;border-radius:6px}
+.fb.ok{background:var(--ok-soft);color:var(--ok)} .fb.bad{background:var(--bad-soft);color:var(--bad)}
+details{border-top:1px solid var(--line);padding-top:8px}
+summary{cursor:pointer;font-size:.9rem;color:var(--accent-ink);font-weight:700}
+details .sol{margin-top:8px;font-family:var(--mono);font-size:.88rem;display:flex;flex-direction:column;gap:3px;overflow-x:auto}
+
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:400}
+td.m{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* resistor */
+.resistor svg{width:100%;max-width:440px;height:auto;display:block;margin:0 auto}
+.bands{display:flex;flex-direction:column;gap:10px}
+.band-row{display:flex;flex-direction:column;gap:5px}
+.band-row .lbl{font-size:.8rem;color:var(--muted)}
+.sw{display:flex;flex-wrap:wrap;gap:5px}
+.sw button{width:28px;height:28px;border-radius:5px;border:2px solid var(--line);cursor:pointer;padding:0}
+.sw button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+
+.tri text{font-family:var(--display);font-weight:700}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rlist .r{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto;gap:8px;align-items:center}
+.rlist .r span{font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.rlist .r input{width:100%}
+.rlist .r button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;cursor:pointer;width:32px;height:32px;font-size:1rem}
+svg.sch{width:100%;height:auto;max-width:520px}
+svg.sch .w{stroke:var(--ink);stroke-width:2;fill:none}
+svg.sch .box{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+svg.sch text{fill:var(--ink);font-family:var(--mono);font-size:13px}
+svg.sch .hl{fill:var(--accent-ink)}
+
+.bar{display:flex;height:24px;border-radius:5px;overflow:hidden;border:1px solid var(--line);background:var(--sunk)}
+.bar span{display:block;height:100%;transition:width .3s}
+.bar .u{background:var(--pcb)} .bar .l{background:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+.quiz{display:flex;flex-direction:column;gap:16px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.q .opts{display:grid;gap:6px}
+.q .opts button{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:7px;padding:8px 12px;background:var(--sunk)}
+.q .opts button:hover{border-color:var(--muted)}
+.q .opts button:focus-visible{outline:2px solid var(--accent)}
+.q .opts button.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:700}
+.q .opts button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.q .opts button[disabled]{cursor:default}
+
+@media (max-width:820px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  nav.side{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
+  nav.side button{display:flex;gap:6px;white-space:nowrap;border:1px solid var(--line);background:var(--surface);flex:none}
+  nav.side button[aria-current="true"]{box-shadow:inset 0 -3px 0 var(--accent)}
+  .score{display:none}
+  .who{text-align:left}
+}
+@media (prefers-reduced-motion:no-preference){section.topic{animation:in .25s ease-out}@keyframes in{from{transform:translateY(4px)}to{transform:none}}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Corrente Contínua</h1>
+    </div>
+    <div class="who">Professor <b>Glauco Barbosa</b><br><span class="mono">epave.glauco@gmail.com</span></div>
+  </header>
+
+  <div class="layout">
+    <nav class="side" id="nav" aria-label="Temas do módulo"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<script>
+// ---------- utilitários ----------
+const PFX={T:1e12,G:1e9,M:1e6,k:1e3,'':1,m:1e-3,'µ':1e-6,n:1e-9,p:1e-12};
+const PNAMES=['T','G','M','k','','m','µ','n','p'];
+const $=s=>document.querySelector(s);
+const nf=s=>parseFloat(String(s).trim().replace(/\s/g,'').replace(',','.'));
+function fmt(v,u){
+  if(!isFinite(v))return'—'; if(v===0)return'0 '+u;
+  let e=Math.floor(Math.log10(Math.abs(v))/3)*3; e=Math.max(-12,Math.min(12,e));
+  const m=Number((v/Math.pow(10,e)).toPrecision(4));
+  const p={12:'T',9:'G',6:'M',3:'k',0:'','-3':'m','-6':'µ','-9':'n','-12':'p'}[e];
+  return String(m).replace('.',',')+' '+p+u;
+}
+function parseVal(s){ // "4,7k" -> 4700
+  const m=String(s).trim().replace(',','.').match(/^(-?[\d.]+)\s*([TGMkKmuµnp]?)/);
+  if(!m)return NaN; let p=m[2]; if(p==='K')p='k'; if(p==='u')p='µ';
+  return parseFloat(m[1])*PFX[p];
+}
+function field(id,label,unit,def,defP='',opts=PNAMES){
+  return `<div class="fld"><label for="${id}">${label}</label><div class="ctl"><input id="${id}" inputmode="decimal" value="${def}"><select id="${id}-p" aria-label="Prefixo de ${label}">${opts.map(p=>`<option value="${p}" ${p===defP?'selected':''}>${p}${unit}</option>`).join('')}</select></div></div>`;
+}
+const get=id=>nf(document.getElementById(id).value)*PFX[document.getElementById(id+'-p').value];
+let solved=new Set();
+function bump(id){solved.add(id);const el=$('#scoreN');if(el)el.textContent=solved.size;}
+
+// exercício com resposta numérica
+function exercise(id,{title,text,unit,answer,defP='',hint,sol,opts=PNAMES}){
+  return `<div class="panel ex" data-ex="${id}">
+    <span class="tag">Exercício · ${title}</span>
+    <p>${text}</p>
+    <div class="row">${field(id+'-in','A tua resposta',unit,'',defP,opts)}<button class="btn" data-check="${id}" data-ans="${answer}">Verificar</button></div>
+    <div class="fb" id="${id}-fb" hidden></div>
+    <details><summary>Ver resolução</summary><div class="sol">${sol.map(l=>`<span>${l}</span>`).join('')}</div></details>
+    <template id="${id}-hint">${hint}</template>
+  </div>`;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-check]'); if(!b)return;
+  const id=b.dataset.check, ans=+b.dataset.ans, v=get(id+'-in'), fb=$('#'+id+'-fb');
+  fb.hidden=false;
+  if(isFinite(v)&&Math.abs(v-ans)<=Math.abs(ans)*0.01){fb.className='fb ok';fb.textContent='Correto. Bom trabalho.';bump(id);}
+  else{fb.className='fb bad';fb.textContent=(isFinite(v)?'Ainda não. ':'Escreve um número. ')+$('#'+id+'-hint').innerHTML;}
+});
+
+// ---------- secções ----------
+const S={};
+
+S.grandezas={t:'Grandezas e prefixos',html:()=>`
+<h2>Grandezas elétricas e prefixos</h2>
+<p class="lead">Cada grandeza tem um símbolo e uma unidade SI. Os prefixos (k, m, µ…) evitam escrever muitos zeros: 4,7 kΩ = 4,7×10³ Ω.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Grandezas principais</span><div class="tbl"><table>
+  <tr><th>Grandeza</th><th>Símbolo</th><th>Unidade</th></tr>
+  <tr><td>Intensidade da corrente</td><td class="m">I</td><td class="m">ampere (A)</td></tr>
+  <tr><td>Diferença de potencial / tensão</td><td class="m">U ou V</td><td class="m">volt (V)</td></tr>
+  <tr><td>Resistência</td><td class="m">R</td><td class="m">ohm (Ω)</td></tr>
+  <tr><td>Carga elétrica</td><td class="m">Q</td><td class="m">coulomb (C)</td></tr>
+  <tr><td>Potência</td><td class="m">P</td><td class="m">watt (W)</td></tr>
+  <tr><td>Energia</td><td class="m">E</td><td class="m">watt-hora (Wh)</td></tr>
+  <tr><td>Resistividade</td><td class="m">ρ</td><td class="m">ohm·metro (Ω·m)</td></tr>
+  <tr><td>Condutância</td><td class="m">G</td><td class="m">siemens (S)</td></tr>
+  <tr><td>Capacitância</td><td class="m">C</td><td class="m">farad (F)</td></tr>
+  <tr><td>Indutância</td><td class="m">L</td><td class="m">henry (H)</td></tr>
+ </table></div></div>
+ <div class="panel"><span class="tag">Múltiplos e submúltiplos</span><div class="tbl"><table>
+  <tr><th>Prefixo</th><th>Símbolo</th><th>Potência</th></tr>
+  ${[['tera','T',12],['giga','G',9],['mega','M',6],['quilo','k',3],['mili','m',-3],['micro','µ',-6],['nano','n',-9],['pico','p',-12]].map(r=>`<tr><td>${r[0]}</td><td class="m">${r[1]}</td><td class="m">10<sup>${r[2]}</sup></td></tr>`).join('')}
+ </table></div>
+ <p style="font-size:.9rem;color:var(--muted)">Multiplicar potências de base 10 soma os expoentes: 10³ × 10⁻³ = 10⁰ = 1. Dividir subtrai: 10³ / 10⁻² = 10⁵.</p></div>
+</div>
+<div class="grid2">
+ <div class="panel tool"><span class="tag">Instrumento · Conversor de prefixos</span>
+  <div class="row">${field('cv','Valor','',4.7,'k')}<div class="fld"><label for="cvTo">Converter para</label><select id="cvTo">${PNAMES.map(p=>`<option value="${p}" ${p===''?'selected':''}>${p||'(unidade)'}</option>`).join('')}</select></div></div>
+  <div class="readout"><span class="big" id="cvOut"></span><span class="sub" id="cvPow"></span></div>
+ </div>
+ <div class="panel ex"><span class="tag">Treino · Conversões rápidas</span>
+  <p id="drQ" style="font-size:1.15rem"></p>
+  <div class="row"><div class="fld"><label for="drIn">Resposta</label><input id="drIn" inputmode="decimal" style="width:10em"></div><button class="btn" id="drChk">Verificar</button><button class="btn ghost" id="drNew">Outra</button></div>
+  <div class="fb" id="drFb" hidden></div>
+ </div>
+</div>`,init(){
+  const run=()=>{const v=get('cv'),to=$('#cvTo').value;const r=v/PFX[to];
+    $('#cvOut').textContent=(isFinite(r)?String(Number(r.toPrecision(6))).replace('.',','):'—')+' '+to;
+    const e=Math.log10(PFX[$('#cv-p').value]);$('#cvPow').textContent=`${$('#cv').value} ${$('#cv-p').value} = ${$('#cv').value} × 10^${e} (unidade)`;};
+  ['cv','cv-p','cvTo'].forEach(i=>$('#'+i).addEventListener('input',run));run();
+  const units=['A','V','Ω','H','F','Hz'];let cur;
+  const nq=()=>{const ps=['k','m','µ','n','M',''];let a=ps[Math.random()*ps.length|0],b;do{b=ps[Math.random()*ps.length|0]}while(b===a);
+    const n=[2,4.7,6,10,18,38,120,200,450,5800][Math.random()*10|0];const u=units[Math.random()*units.length|0];
+    cur={ans:n*PFX[a]/PFX[b]};$('#drQ').innerHTML=`${String(n).replace('.',',')} ${a}${u} = <b>?</b> ${b}${u}`;$('#drIn').value='';$('#drFb').hidden=true;};
+  $('#drNew').onclick=nq;
+  $('#drChk').onclick=()=>{const v=nf($('#drIn').value),fb=$('#drFb');fb.hidden=false;
+    if(Math.abs(v-cur.ans)<=Math.abs(cur.ans)*1e-6){fb.className='fb ok';fb.textContent='Correto.';bump('dr');}
+    else{fb.className='fb bad';fb.textContent='Ainda não. A resposta é '+String(Number(cur.ans.toPrecision(6))).replace('.',',')+'.';}};
+  nq();
+}};
+
+S.corrente={t:'Carga e corrente',html:()=>`
+<h2>Carga elétrica e corrente</h2>
+<p class="lead">Corrente elétrica é o movimento ordenado de partículas com carga. Num fio de cobre são os eletrões livres que se deslocam quando aplicamos uma diferença de potencial.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">O essencial</span><ul class="facts">
+  <li>A carga mede-se em coulomb (C). 1 C corresponde a 6,25×10¹⁸ eletrões.</li>
+  <li>Cargas do mesmo sinal repelem-se; cargas de sinal oposto atraem-se (Lei de Coulomb).</li>
+  <li>Um corpo com igual número de cargas positivas e negativas é eletricamente neutro.</li>
+  <li>Sentido convencional: do + para o −. Os eletrões deslocam-se ao contrário, do − para o +.</li>
+ </ul>
+ <div class="formula">I = Q / t<small>1 A = 1 C que atravessa a secção do condutor em 1 s</small></div></div>
+ <div class="panel tool"><span class="tag">Instrumento · I = Q / t</span>
+  <div class="seg" role="group" aria-label="Calcular"><button data-qi="I" aria-pressed="true">Calcular I</button><button data-qi="Q" aria-pressed="false">Calcular Q</button><button data-qi="t" aria-pressed="false">Calcular t</button></div>
+  <div class="row" id="qiF"></div>
+  <div class="readout"><span class="big" id="qiOut"></span><span class="sub" id="qiSub"></span></div>
+ </div>
+</div>
+<div class="grid2">
+ ${exercise('e1',{title:'Corrente',text:'Qual a intensidade da corrente num fio condutor, sabendo que uma carga de <b>3600 µC</b> leva <b>12 s</b> a atravessar a sua secção transversal?',unit:'A',answer:300e-6,defP:'µ',hint:'Converte 3600 µC para coulomb antes de dividir pelo tempo.',sol:['Q = 3600 µC = 3600×10⁻⁶ C','I = Q / t = 3600×10⁻⁶ / 12','I = 300×10⁻⁶ A = 300 µA']})}
+ ${exercise('e2',{title:'Carga',text:'Calcula a quantidade de eletricidade que atravessa a secção de um fio condutor durante <b>5 minutos</b>, sendo a corrente de <b>50 mA</b>.',unit:'C',answer:15,hint:'O tempo tem de estar em segundos: 5 min = 300 s.',sol:['t = 5 × 60 = 300 s','I = 50 mA = 50×10⁻³ A','Q = I × t = 50×10⁻³ × 300 = 15 C']})}
+</div>`,init(){
+  let mode='I';
+  const F={I:[['qQ','Carga Q','C',3600,'µ'],['qt','Tempo t','s',12,'']],Q:[['qI','Corrente I','A',50,'m'],['qt','Tempo t','s',300,'']],t:[['qQ','Carga Q','C',15,''],['qI','Corrente I','A',50,'m']]};
+  const draw=()=>{$('#qiF').innerHTML=F[mode].map(f=>field(f[0],f[1],f[2],f[3],f[4],f[2]==='s'?['','m']:PNAMES)).join('');$('#qiF').querySelectorAll('input,select').forEach(x=>x.addEventListener('input',calc));calc();};
+  const calc=()=>{let r,s;if(mode==='I'){r=get('qQ')/get('qt');s=fmt(r,'A');$('#qiSub').textContent='I = Q / t';}
+    else if(mode==='Q'){r=get('qI')*get('qt');s=fmt(r,'C');$('#qiSub').textContent='Q = I × t  ≈ '+(r*6.25e18).toExponential(2).replace('.',',')+' eletrões';}
+    else{r=get('qQ')/get('qI');s=fmt(r,'s');$('#qiSub').textContent='t = Q / I';}$('#qiOut').textContent=s;};
+  document.querySelectorAll('[data-qi]').forEach(b=>b.onclick=()=>{mode=b.dataset.qi;document.querySelectorAll('[data-qi]').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();});
+  draw();
+}};
+
+S.resistividade={t:'Resistividade',html:()=>`
+<h2>Resistividade e resistência de um condutor</h2>
+<p class="lead">A resistividade (ρ) é própria de cada material. A resistência de um fio depende do material, do comprimento e da secção: mais comprido, mais resistência; mais grosso, menos resistência.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Fórmulas</span>
+  <div class="formula">R = ρ × L / S<small>ρ em Ω·m · L em m · S em m²</small></div>
+  <div class="formula">S = π × d² / 4 = π × r²</div>
+  <ul class="facts"><li>A resistência dissipa energia sob a forma de calor (efeito Joule).</li><li>Os condutores têm resistividade muito menor do que os isolantes.</li></ul></div>
+ <div class="panel tool"><span class="tag">Instrumento · Resistência de um fio</span>
+  <div class="row"><div class="fld"><label for="rhoM">Material</label><select id="rhoM">
+   <option value="1.7e-8">Cobre (1,7×10⁻⁸ Ω·m)</option><option value="1.59e-8">Prata (1,59×10⁻⁸)</option><option value="2.8e-8">Alumínio (2,8×10⁻⁸)</option><option value="1.0e-7">Ferro (1,0×10⁻⁷)</option><option value="1.1e-6">Níquel-crómio (1,1×10⁻⁶)</option></select></div></div>
+  <div class="row">
+   <div class="fld"><label for="rhoD">Diâmetro (mm)</label><input id="rhoD" value="4" inputmode="decimal" style="width:7em"></div>
+   ${field('rhoL','Comprimento','m',10,'k',['k','','m'])}
+  </div>
+  <div class="readout"><span class="big" id="rhoOut"></span><span class="sub" id="rhoSub"></span></div>
+ </div>
+</div>
+${exercise('e3',{title:'Resistividade',text:'Qual a resistência de um fio cilíndrico de <b>cobre</b>, com <b>4 mm</b> de diâmetro e <b>10 km</b> de comprimento? (ρ = 1,7×10⁻⁸ Ω·m)',unit:'Ω',answer:13.53,hint:'Calcula primeiro a secção em m²: o diâmetro é 4×10⁻³ m.',sol:['S = π × (4×10⁻³)² / 4 = 1,2566×10⁻⁵ m²','L = 10 km = 10×10³ m','R = 1,7×10⁻⁸ × 10×10³ / 1,2566×10⁻⁵','R ≈ 13,5 Ω']})}
+`,init(){
+  const c=()=>{const rho=+$('#rhoM').value,d=nf($('#rhoD').value)*1e-3,L=get('rhoL');const S_=Math.PI*d*d/4;const R=rho*L/S_;
+    $('#rhoOut').textContent=fmt(R,'Ω');$('#rhoSub').textContent='S = '+(S_*1e6).toFixed(3).replace('.',',')+' mm²';};
+  ['rhoM','rhoD','rhoL','rhoL-p'].forEach(i=>$('#'+i).addEventListener('input',c));c();
+}};
+
+const CC=[{n:'Preto',c:'#1c1c1c',d:0,m:1},{n:'Castanho',c:'#7b4a1f',d:1,m:10,t:1},{n:'Vermelho',c:'#d3302b',d:2,m:100,t:2},{n:'Laranja',c:'#ef7e1e',d:3,m:1e3},{n:'Amarelo',c:'#f3d21a',d:4,m:1e4},{n:'Verde',c:'#2e9e4f',d:5,m:1e5,t:.5},{n:'Azul',c:'#2463c8',d:6,m:1e6,t:.25},{n:'Violeta',c:'#7a3fb5',d:7,t:.1},{n:'Cinzento',c:'#8c8c8c',d:8},{n:'Branco',c:'#f5f5f5',d:9},{n:'Dourado',c:'#c9a227',m:.1,t:5},{n:'Prateado',c:'#c3c7cb',m:.01,t:10}];
+S.cores={t:'Código de cores',html:()=>`
+<h2>Código de cores das resistências</h2>
+<p class="lead">Nas resistências de 4 anéis: 1.º e 2.º anel são algarismos, o 3.º é o multiplicador e o 4.º a tolerância. Clica nas cores para montar a resistência.</p>
+<div class="grid2">
+ <div class="panel tool"><span class="tag">Instrumento · Leitor de 4 anéis</span>
+  <div class="resistor"><svg viewBox="0 0 400 100" role="img" aria-label="Resistência com anéis coloridos">
+   <line x1="0" y1="50" x2="400" y2="50" stroke="var(--muted)" stroke-width="5"/>
+   <rect x="80" y="22" width="240" height="56" rx="22" fill="#d8bf93" stroke="#a8895a" stroke-width="2"/>
+   <rect id="b0" x="112" y="22" width="18" height="56"/><rect id="b1" x="148" y="22" width="18" height="56"/><rect id="b2" x="184" y="22" width="18" height="56"/><rect id="b3" x="268" y="22" width="18" height="56"/>
+  </svg></div>
+  <div class="readout"><span class="big" id="ccOut"></span><span class="sub" id="ccSub"></span></div>
+  <div class="bands" id="ccBands"></div>
+ </div>
+ <div class="panel ex"><span class="tag">Desafio · Lê a resistência</span>
+  <p>Gera uma resistência ao acaso e calcula o seu valor nominal.</p>
+  <div class="resistor"><svg viewBox="0 0 400 100" role="img" aria-label="Resistência do desafio">
+   <line x1="0" y1="50" x2="400" y2="50" stroke="var(--muted)" stroke-width="5"/>
+   <rect x="80" y="22" width="240" height="56" rx="22" fill="#d8bf93" stroke="#a8895a" stroke-width="2"/>
+   <rect id="d0" x="112" y="22" width="18" height="56"/><rect id="d1" x="148" y="22" width="18" height="56"/><rect id="d2" x="184" y="22" width="18" height="56"/><rect id="d3" x="268" y="22" width="18" height="56"/>
+  </svg></div>
+  <p id="dNames" class="mono" style="font-size:.85rem;color:var(--muted)"></p>
+  <div class="row"><div class="fld"><label for="dIn">Valor (ex.: 4,7k)</label><input id="dIn" style="width:9em"></div><button class="btn" id="dChk">Verificar</button><button class="btn ghost" id="dNew">Outra</button></div>
+  <div class="fb" id="dFb" hidden></div>
+  <details><summary>Ver resolução</summary><div class="sol" id="dSol"></div></details>
+ </div>
+</div>
+<div class="panel"><span class="tag">Tabela de referência</span><div class="tbl"><table>
+ <tr><th>Cor</th><th>Algarismo</th><th>Multiplicador</th><th>Tolerância</th></tr>
+ ${CC.map(x=>`<tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${x.c};border:1px solid var(--line);margin-right:8px;vertical-align:-1px"></span>${x.n}</td><td class="m">${x.d??'—'}</td><td class="m">${x.m!=null?'×'+String(x.m).replace('.',','):'—'}</td><td class="m">${x.t!=null?'±'+String(x.t).replace('.',',')+' %':'—'}</td></tr>`).join('')}
+</table></div></div>`,init(){
+  const st=[1,0,4,10];
+  const ok=[i=>CC[i].d!=null,i=>CC[i].d!=null,i=>CC[i].m!=null,i=>CC[i].t!=null];
+  const names=['1.º anel · algarismo','2.º anel · algarismo','3.º anel · multiplicador','4.º anel · tolerância'];
+  const val=s=>(CC[s[0]].d*10+CC[s[1]].d)*CC[s[2]].m;
+  const draw=()=>{st.forEach((v,i)=>$('#b'+i).setAttribute('fill',CC[v].c));
+    const R=val(st),t=CC[st[3]].t;$('#ccOut').textContent=fmt(R,'Ω')+'  ±'+String(t).replace('.',',')+' %';
+    $('#ccSub').textContent='mín. '+fmt(R*(1-t/100),'Ω')+'  ·  máx. '+fmt(R*(1+t/100),'Ω');
+    document.querySelectorAll('.sw button').forEach(b=>b.setAttribute('aria-pressed',st[+b.dataset.b]===+b.dataset.c));};
+  $('#ccBands').innerHTML=names.map((n,b)=>`<div class="band-row"><span class="lbl">${n}</span><div class="sw">${CC.map((x,i)=>ok[b](i)?`<button data-b="${b}" data-c="${i}" style="background:${x.c}" title="${x.n}" aria-label="${x.n}"></button>`:'').join('')}</div></div>`).join('');
+  $('#ccBands').onclick=e=>{const b=e.target.closest('button');if(!b)return;st[+b.dataset.b]=+b.dataset.c;draw();};draw();
+  let ds;const rnd=a=>a[Math.random()*a.length|0];
+  const nd=()=>{ds=[rnd([1,2,3,4,5,6,7,8,9]),rnd([0,1,2,3,4,5,6,7,8,9]),rnd([0,1,2,3,4,5,10]),rnd([10,11,2,1])];
+    ds.forEach((v,i)=>$('#d'+i).setAttribute('fill',CC[v].c));$('#dNames').textContent=ds.map(v=>CC[v].n).join(' · ');
+    const R=val(ds),t=CC[ds[3]].t;$('#dSol').innerHTML=`<span>${CC[ds[0]].n} = ${CC[ds[0]].d}, ${CC[ds[1]].n} = ${CC[ds[1]].d}</span><span>${CC[ds[2]].n} → ×${String(CC[ds[2]].m).replace('.',',')}</span><span>R = ${fmt(R,'Ω')} ±${String(t).replace('.',',')} %</span><span>Limites: ${fmt(R*(1-t/100),'Ω')} a ${fmt(R*(1+t/100),'Ω')}</span>`;
+    $('#dIn').value='';$('#dFb').hidden=true;};
+  $('#dNew').onclick=nd;$('#dChk').onclick=()=>{const v=parseVal($('#dIn').value),R=val(ds),fb=$('#dFb');fb.hidden=false;
+    if(Math.abs(v-R)<=R*1e-6){fb.className='fb ok';fb.textContent='Correto: '+fmt(R,'Ω')+'.';bump('cc');}else{fb.className='fb bad';fb.textContent='Ainda não. Lê os dois algarismos e depois multiplica pelo 3.º anel.';}};
+  nd();
+}};
+
+S.ohm={t:'Lei de Ohm',html:()=>`
+<h2>Lei de Ohm</h2>
+<p class="lead">Numa resistência, a tensão nos seus terminais é igual ao produto da resistência pela corrente que a atravessa.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Triângulo V · I · R</span>
+  <svg class="tri" viewBox="0 0 240 200" style="width:100%;max-width:260px;margin:0 auto;display:block" role="img" aria-label="Triângulo da Lei de Ohm">
+   <circle cx="120" cy="104" r="88" fill="var(--sunk)" stroke="var(--ink)" stroke-width="3"/>
+   <line x1="32" y1="104" x2="208" y2="104" stroke="var(--ink)" stroke-width="3"/><line x1="120" y1="104" x2="120" y2="192" stroke="var(--ink)" stroke-width="3"/>
+   <text id="tV" x="120" y="82" text-anchor="middle" font-size="44">V</text><text id="tI" x="80" y="160" text-anchor="middle" font-size="40">I</text><text id="tR" x="160" y="160" text-anchor="middle" font-size="40">R</text>
+  </svg>
+  <p style="font-size:.92rem;color:var(--muted)">Tapa a grandeza que queres calcular: o que fica à vista dá a fórmula. V em cima divide; I e R lado a lado multiplicam.</p>
+  <ul class="facts"><li>Com R constante, V e I são diretamente proporcionais (relação linear).</li><li>Com V constante, I e R são inversamente proporcionais.</li></ul>
+ </div>
+ <div class="panel tool"><span class="tag">Instrumento · Calculadora</span>
+  <div class="seg" role="group" aria-label="Calcular"><button data-om="V" aria-pressed="true">V = I × R</button><button data-om="I" aria-pressed="false">I = V / R</button><button data-om="R" aria-pressed="false">R = V / I</button></div>
+  <div class="row" id="omF"></div>
+  <div class="readout"><span class="big" id="omOut"></span><span class="sub" id="omSub"></span></div>
+  <svg id="omG" viewBox="0 0 320 170" style="width:100%" role="img" aria-label="Gráfico V em função de I"></svg>
+ </div>
+</div>
+${exercise('e4',{title:'Lei de Ohm',text:'Uma resistência é percorrida por uma corrente de <b>150 µA</b>, provocando uma queda de tensão de <b>1,8 V</b>. Qual o valor da resistência?',unit:'Ω',answer:12000,defP:'k',hint:'R = V / I, com I em amperes: 150 µA = 150×10⁻⁶ A.',sol:['R = V / I','R = 1,8 / 150×10⁻⁶','R = 12×10³ Ω = 12 kΩ']})}
+`,init(){
+  let mode='V';const F={V:[['oI','Corrente I','A',20,'m'],['oR','Resistência R','Ω',470,'']],I:[['oV','Tensão V','V',12,''],['oR','Resistência R','Ω',1,'k']],R:[['oV','Tensão V','V',1.8,''],['oI','Corrente I','A',150,'µ']]};
+  const draw=()=>{$('#omF').innerHTML=F[mode].map(f=>field(...f)).join('');$('#omF').querySelectorAll('input,select').forEach(x=>x.addEventListener('input',calc));
+    ['V','I','R'].forEach(k=>$('#t'+k).setAttribute('fill',k===mode?'var(--accent)':'var(--ink)'));calc();};
+  const calc=()=>{let V,I,R;
+    if(mode==='V'){I=get('oI');R=get('oR');V=I*R;$('#omOut').textContent='V = '+fmt(V,'V');}
+    if(mode==='I'){V=get('oV');R=get('oR');I=V/R;$('#omOut').textContent='I = '+fmt(I,'A');}
+    if(mode==='R'){V=get('oV');I=get('oI');R=V/I;$('#omOut').textContent='R = '+fmt(R,'Ω');}
+    $('#omSub').textContent='P = V × I = '+fmt(V*I,'W');graph(V,I,R);};
+  const graph=(V,I,R)=>{const g=$('#omG');if(!(V>0&&I>0)){g.innerHTML='';return;}
+    const x0=44,y0=140,w=260,h=120,Im=I*1.5,Vm=V*1.5;const X=i=>x0+i/Im*w,Y=v=>y0-v/Vm*h;
+    g.innerHTML=`<line x1="${x0}" y1="${y0}" x2="${x0+w}" y2="${y0}" stroke="var(--muted)"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y0-h}" stroke="var(--muted)"/>
+    <line x1="${X(0)}" y1="${Y(0)}" x2="${X(Im)}" y2="${Y(Vm)}" stroke="var(--pcb)" stroke-width="2.5"/>
+    <line x1="${X(I)}" y1="${y0}" x2="${X(I)}" y2="${Y(V)}" stroke="var(--accent)" stroke-dasharray="3 3"/><line x1="${x0}" y1="${Y(V)}" x2="${X(I)}" y2="${Y(V)}" stroke="var(--accent)" stroke-dasharray="3 3"/>
+    <circle cx="${X(I)}" cy="${Y(V)}" r="5" fill="var(--accent)"/>
+    <text x="${x0+w}" y="${y0+18}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="var(--mono)">I</text>
+    <text x="${X(I)}" y="${y0+18}" text-anchor="middle" fill="var(--ink)" font-size="11" font-family="var(--mono)">${fmt(I,'A')}</text>
+    <text x="${x0-6}" y="${Y(V)+4}" text-anchor="end" fill="var(--ink)" font-size="11" font-family="var(--mono)">${fmt(V,'V')}</text>
+    <text x="${x0}" y="${y0-h-6}" fill="var(--muted)" font-size="11" font-family="var(--mono)">V</text>
+    <text x="${X(Im*.62)}" y="${Y(Vm*.62)-10}" fill="var(--pcb)" font-size="11" font-family="var(--mono)" text-anchor="end">declive = R = ${fmt(R,'Ω')}</text>`;};
+  document.querySelectorAll('[data-om]').forEach(b=>b.onclick=()=>{mode=b.dataset.om;document.querySelectorAll('[data-om]').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();});draw();
+}};
+
+S.associacao={t:'Associação de resistências',html:()=>`
+<h2>Associação de resistências</h2>
+<p class="lead">Um conjunto de resistências comporta-se como uma única resistência equivalente (R<sub>eq</sub>).</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Série</span><div class="formula">R<sub>eq</sub> = R₁ + R₂ + … + Rₙ</div><p>Um só caminho: a <b>corrente é a mesma</b> em todas. A tensão divide-se.</p><p class="mono" style="font-size:.85rem;color:var(--muted)">4 × 1 kΩ em série = 4 kΩ</p></div>
+ <div class="panel"><span class="tag">Paralelo</span><div class="formula">1/R<sub>eq</sub> = 1/R₁ + 1/R₂ + … + 1/Rₙ<small>Para duas: R<sub>eq</sub> = R₁·R₂ / (R₁ + R₂)</small></div><p>Todas ligadas aos mesmos dois pontos: a <b>tensão é a mesma</b>. A corrente divide-se.</p><p class="mono" style="font-size:.85rem;color:var(--muted)">4 × 1 kΩ em paralelo = 250 Ω</p></div>
+</div>
+<div class="panel tool"><span class="tag">Instrumento · Série / paralelo com fonte</span>
+ <div class="row"><div class="seg" role="group" aria-label="Tipo"><button data-as="s" aria-pressed="true">Série</button><button data-as="p" aria-pressed="false">Paralelo</button></div>
+  ${field('asU','Tensão da fonte U','V',12,'',['','m','k'])}</div>
+ <div class="grid2">
+  <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><div class="rlist" id="asL"></div><div><button class="btn ghost" id="asAdd">+ Resistência</button></div><p style="font-size:.82rem;color:var(--muted)">Escreve valores como 220, 4,7k ou 1M.</p></div>
+  <div style="display:flex;flex-direction:column;gap:10px;min-width:0"><div class="readout"><span class="big" id="asOut"></span><span class="sub" id="asSub"></span></div><div class="tbl"><table id="asT"></table></div></div>
+ </div>
+</div>
+<div class="panel tool"><span class="tag">Instrumento · Associação mista (R₄ em série com (R₁+R₃) ∥ R₂)</span>
+ <div style="overflow-x:auto"><svg class="sch" viewBox="0 0 520 200" role="img" aria-label="Circuito misto">
+  <path class="w" d="M30 60 H70 M150 60 H200 M200 60 V30 H240 M320 30 H340 M420 30 H460 V60 M200 60 V110 H290 M370 110 H460 V60 M460 60 H490 V170 H30 V60"/>
+  <rect class="box" x="70" y="48" width="80" height="24"/><text x="110" y="42" text-anchor="middle">R₄</text>
+  <rect class="box" x="240" y="18" width="80" height="24"/><text x="280" y="12" text-anchor="middle">R₁</text>
+  <rect class="box" x="340" y="18" width="80" height="24"/><text x="380" y="12" text-anchor="middle">R₃</text>
+  <rect class="box" x="290" y="98" width="80" height="24"/><text x="330" y="140" text-anchor="middle">R₂</text>
+  <circle cx="200" cy="60" r="4" fill="var(--ink)"/><circle cx="460" cy="60" r="4" fill="var(--ink)"/>
+  <text x="260" y="188" text-anchor="middle" class="hl">U</text><text x="36" y="52">I →</text><text x="218" y="24">I₁</text><text x="214" y="104">I₂</text>
+ </svg></div>
+ <div class="row">${field('mR1','R₁','Ω',100,'',['','k','M'])}${field('mR2','R₂','Ω',330,'',['','k','M'])}${field('mR3','R₃','Ω',220,'',['','k','M'])}${field('mR4','R₄','Ω',47,'',['','k','M'])}${field('mU','U','V',12,'',['','m'])}</div>
+ <div class="readout"><span class="big" id="mOut"></span><span class="sub" id="mSub"></span></div>
+</div>`,init(){
+  let mode='s',rs=['1k','1k','1k','1k'];
+  const drawL=()=>{$('#asL').innerHTML=rs.map((r,i)=>`<div class="r"><span>R${i+1}</span><input id="asR${i}" value="${r}" aria-label="R${i+1}"><button data-rm="${i}" aria-label="Remover R${i+1}">×</button></div>`).join('');
+    rs.forEach((_,i)=>$('#asR'+i).addEventListener('input',e=>{rs[i]=e.target.value;calc();}));calc();};
+  $('#asL').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(b&&rs.length>1){rs.splice(+b.dataset.rm,1);drawL();}});
+  $('#asAdd').onclick=()=>{if(rs.length<8){rs.push('1k');drawL();}};
+  const calc=()=>{const R=rs.map(parseVal),U=get('asU');if(R.some(x=>!(x>0))){$('#asOut').textContent='—';$('#asSub').textContent='Há um valor inválido.';$('#asT').innerHTML='';return;}
+    const Req=mode==='s'?R.reduce((a,b)=>a+b,0):1/R.reduce((a,b)=>a+1/b,0),I=U/Req;
+    $('#asOut').textContent='Req = '+fmt(Req,'Ω');$('#asSub').textContent='I total = '+fmt(I,'A')+'  ·  P total = '+fmt(U*I,'W');
+    $('#asT').innerHTML='<tr><th></th><th>R</th><th>V</th><th>I</th></tr>'+R.map((r,i)=>{const v=mode==='s'?I*r:U,ii=v/r;return`<tr><td class="m">R${i+1}</td><td class="m">${fmt(r,'Ω')}</td><td class="m">${fmt(v,'V')}</td><td class="m">${fmt(ii,'A')}</td></tr>`;}).join('');};
+  document.querySelectorAll('[data-as]').forEach(b=>b.onclick=()=>{mode=b.dataset.as;document.querySelectorAll('[data-as]').forEach(x=>x.setAttribute('aria-pressed',x===b));calc();});
+  ['asU','asU-p'].forEach(i=>$('#'+i).addEventListener('input',calc));drawL();
+  const mc=()=>{const R1=get('mR1'),R2=get('mR2'),R3=get('mR3'),R4=get('mR4'),U=get('mU');const a=R1+R3,p=a*R2/(a+R2),Req=R4+p,I=U/Req,Vp=I*p;
+    $('#mOut').textContent='Req = '+fmt(Req,'Ω');$('#mSub').textContent=`R₁+R₃ = ${fmt(a,'Ω')} · (R₁+R₃)∥R₂ = ${fmt(p,'Ω')} · I = ${fmt(I,'A')} · I₁ = ${fmt(Vp/a,'A')} · I₂ = ${fmt(Vp/R2,'A')}`;};
+  ['mR1','mR2','mR3','mR4','mU'].forEach(i=>{$('#'+i).addEventListener('input',mc);$('#'+i+'-p').addEventListener('input',mc);});mc();
+}};
+
+S.medida={t:'Aparelhos de medida',html:()=>`
+<h2>Aparelhos de medida</h2>
+<p class="lead">A regra de ouro: o voltímetro liga-se em paralelo, o amperímetro em série, e o ohmímetro só com o componente isolado e o circuito desligado.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Voltímetro · mede tensão (V)</span>
+  <svg class="sch" viewBox="0 0 260 130" role="img" aria-label="Voltímetro em paralelo"><path class="w" d="M20 40 H80 M160 40 H240 M60 40 V100 H100 M140 100 H180 V40"/><rect class="box" x="80" y="28" width="80" height="24"/><text x="120" y="20" text-anchor="middle">R</text><circle class="box" cx="120" cy="100" r="20"/><text x="120" y="105" text-anchor="middle" class="hl">V</text></svg>
+  <ul class="facts"><li>Ligado <b>em paralelo</b> (derivação) com o elemento.</li><li>Resistência interna <b>muito elevada</b>, para quase não desviar corrente.</li></ul></div>
+ <div class="panel"><span class="tag">Amperímetro · mede corrente (A)</span>
+  <svg class="sch" viewBox="0 0 260 130" role="img" aria-label="Amperímetro em série"><path class="w" d="M20 60 H60 M100 60 H140 M220 60 H240"/><circle class="box" cx="80" cy="60" r="20"/><text x="80" y="65" text-anchor="middle" class="hl">A</text><rect class="box" x="140" y="48" width="80" height="24"/><text x="180" y="40" text-anchor="middle">R</text></svg>
+  <ul class="facts"><li>Intercalado <b>em série</b> no ramo a medir (é preciso abrir o circuito).</li><li>Resistência interna <b>muito baixa</b>. A pinça amperimétrica mede sem abrir o circuito.</li></ul></div>
+ <div class="panel"><span class="tag">Ohmímetro · mede resistência (Ω)</span>
+  <svg class="sch" viewBox="0 0 260 130" role="img" aria-label="Ohmímetro aos terminais de R isolada"><path class="w" d="M60 40 H80 M160 40 H180 M60 40 V100 H100 M140 100 H180 V40"/><rect class="box" x="80" y="28" width="80" height="24"/><text x="120" y="20" text-anchor="middle">R</text><circle class="box" cx="120" cy="100" r="20"/><text x="120" y="105" text-anchor="middle" class="hl">Ω</text></svg>
+  <ul class="facts"><li>Liga-se aos terminais do componente, <b>sem alimentação</b>.</li><li>O componente tem de estar <b>isolado</b> do resto do circuito, senão mede-se a associação.</li></ul></div>
+</div>`,init(){}};
+
+S.geradores={t:'Geradores e recetores',html:()=>`
+<h2>Geradores e recetores</h2>
+<p class="lead">Um gerador real tem uma força eletromotriz E e uma resistência interna r. Por isso a tensão aos seus terminais depende da carga que alimenta.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Gerador em vazio e em carga</span>
+  <div class="formula">U = E − r × I<small>E: força eletromotriz (V) · r: resistência interna (Ω)</small></div>
+  <ul class="facts"><li><b>Em vazio</b> (sem carga, I = 0): U = E. O voltímetro lê a própria f.e.m.</li>
+  <li><b>Em carga</b>: a tensão aos terminais desce, porque há uma queda de tensão r·I dentro do gerador.</li>
+  <li><b>Curto-circuito</b> (U = 0): I<sub>cc</sub> = E / r, a corrente máxima, que aquece e pode danificar o gerador.</li>
+  <li>Rendimento do gerador: η = U / E.</li>
+  <li>Um <b>recetor</b> (por exemplo, um motor) consome energia: U = E' + r'·I, onde E' é a força contraeletromotriz.</li></ul></div>
+ <div class="panel tool"><span class="tag">Instrumento · Característica do gerador</span>
+  <div class="row"><div class="fld"><label for="gE">f.e.m. E (V)</label><input id="gE" value="12" inputmode="decimal" style="width:6em"></div><div class="fld"><label for="gr">r interna (Ω)</label><input id="gr" value="0,5" inputmode="decimal" style="width:6em"></div><div class="fld"><label for="gRl">Carga R (Ω)</label><input id="gRl" value="2,5" inputmode="decimal" style="width:6em"></div></div>
+  <div class="readout"><span class="big" id="gOut2"></span><span class="sub" id="gSub2"></span></div>
+  <svg id="gG" viewBox="0 0 320 180" style="width:100%" role="img" aria-label="Gráfico U em função de I do gerador"></svg>
+ </div>
+</div>
+${exercise('e10',{title:'Gerador em carga',text:'Uma bateria com <b>E = 12 V</b> e resistência interna <b>r = 0,5 Ω</b> fornece <b>4 A</b> a uma carga. Qual a tensão aos seus terminais?',unit:'V',answer:10,opts:['','m'],hint:'A queda interna é r × I; subtrai-a à f.e.m.',sol:['Queda interna = r × I = 0,5 × 4 = 2 V','U = E − r × I = 12 − 2 = 10 V','Rendimento: η = 10 / 12 ≈ 83 %']})}
+<h3>Associação de geradores</h3>
+<p class="lead">Pilhas e fontes de tensão também se associam. Em série somam tensões; em paralelo somam correntes, mantendo a tensão.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Regras</span><ul class="facts">
+  <li><b>Série aditiva</b> (+ ligado a −): V<sub>eq</sub> = V₁ + V₂ + … + Vₙ</li>
+  <li><b>Série subtrativa</b> (polaridades opostas): V<sub>eq</sub> = |V₁ − V₂|, com a polaridade da fonte maior.</li>
+  <li><b>Paralelo</b> (geradores iguais): V<sub>eq</sub> = V de cada um; I<sub>total</sub> = I₁ + I₂ + … + Iₙ.</li>
+  <li>Em paralelo os geradores devem ter a mesma tensão, para que cada um forneça a mesma corrente.</li></ul></div>
+ <div class="panel tool"><span class="tag">Instrumento · Banco de pilhas</span>
+  <div class="seg" role="group" aria-label="Tipo"><button data-gm="a" aria-pressed="true">Série aditiva</button><button data-gm="s" aria-pressed="false">Série subtrativa</button><button data-gm="p" aria-pressed="false">Paralelo</button></div>
+  <div class="row" id="gF"></div>
+  <div class="readout"><span class="big" id="gOut"></span><span class="sub" id="gSub"></span></div>
+ </div>
+</div>`,init(){
+  let m='a';const F={a:`<div class="fld"><label for="gN">N.º de pilhas</label><input id="gN" value="4" style="width:5em"></div><div class="fld"><label for="gV">Tensão de cada (V)</label><input id="gV" value="1,5" style="width:6em"></div>`,
+   s:`<div class="fld"><label for="gV1">V₁ (V)</label><input id="gV1" value="9" style="width:6em"></div><div class="fld"><label for="gV2">V₂ (V)</label><input id="gV2" value="4,5" style="width:6em"></div>`,
+   p:`<div class="fld"><label for="gN">N.º de geradores</label><input id="gN" value="3" style="width:5em"></div><div class="fld"><label for="gV">Tensão de cada (V)</label><input id="gV" value="12" style="width:6em"></div><div class="fld"><label for="gI">Corrente de cada (A)</label><input id="gI" value="0,5" style="width:6em"></div>`};
+  const c=()=>{if(m==='a'){const n=nf($('#gN').value),v=nf($('#gV').value);$('#gOut').textContent='Veq = '+fmt(n*v,'V');$('#gSub').textContent=`${n} × ${String(v).replace('.',',')} V`;}
+   if(m==='s'){const a=nf($('#gV1').value),b=nf($('#gV2').value);$('#gOut').textContent='Veq = '+fmt(Math.abs(a-b),'V');$('#gSub').textContent='Polaridade de '+(a>=b?'V₁':'V₂')+' (a maior)';}
+   if(m==='p'){const n=nf($('#gN').value),v=nf($('#gV').value),i=nf($('#gI').value);$('#gOut').textContent='Veq = '+fmt(v,'V')+'  ·  I = '+fmt(n*i,'A');$('#gSub').textContent='A tensão mantém-se; as correntes somam-se';}};
+  const d=()=>{$('#gF').innerHTML=F[m];$('#gF').querySelectorAll('input').forEach(x=>x.addEventListener('input',c));c();};
+  document.querySelectorAll('[data-gm]').forEach(b=>b.onclick=()=>{m=b.dataset.gm;document.querySelectorAll('[data-gm]').forEach(x=>x.setAttribute('aria-pressed',x===b));d();});d();
+  const gc=()=>{const E=nf($('#gE').value),r=nf($('#gr').value),RL=nf($('#gRl').value),g=$('#gG');
+   if(!(E>0&&r>0&&RL>=0)){$('#gOut2').textContent='—';$('#gSub2').textContent='Usa E > 0 e r > 0.';g.innerHTML='';return;}
+   const I=E/(r+RL),U=E-r*I,Icc=E/r;
+   $('#gOut2').textContent=`U = ${fmt(U,'V')} · I = ${fmt(I,'A')}`;
+   $('#gSub2').textContent=`Queda interna r·I = ${fmt(r*I,'V')} · η = ${(U/E*100).toFixed(1).replace('.',',')} % · Icc = ${fmt(Icc,'A')}`;
+   const x0=56,y0=145,w=240,h=115,X=i=>x0+i/Icc*w,Y=u=>y0-u/E*h,T='font-size="11" font-family="var(--mono)"';
+   g.innerHTML=`<line x1="${x0}" y1="${y0}" x2="${x0+w+10}" y2="${y0}" stroke="var(--muted)"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y0-h-12}" stroke="var(--muted)"/>
+   <line x1="${X(0)}" y1="${Y(E)}" x2="${X(Icc)}" y2="${Y(0)}" stroke="var(--pcb)" stroke-width="2.5"/>
+   <line x1="${X(I)}" y1="${y0}" x2="${X(I)}" y2="${Y(U)}" stroke="var(--accent)" stroke-dasharray="3 3"/><line x1="${x0}" y1="${Y(U)}" x2="${X(I)}" y2="${Y(U)}" stroke="var(--accent)" stroke-dasharray="3 3"/>
+   <circle cx="${X(0)}" cy="${Y(E)}" r="4" fill="var(--pcb)"/><circle cx="${X(Icc)}" cy="${Y(0)}" r="4" fill="var(--pcb)"/><circle cx="${X(I)}" cy="${Y(U)}" r="5" fill="var(--accent)"/>
+   <text x="${x0-6}" y="${Y(E)+4}" text-anchor="end" fill="var(--ink)" ${T}>E</text>
+   <text x="${x0-6}" y="${Y(U)+14}" text-anchor="end" fill="var(--accent-ink)" ${T}>${fmt(U,'V')}</text>
+   <text x="${X(Icc)}" y="${y0+16}" text-anchor="middle" fill="var(--ink)" ${T}>Icc</text>
+   <text x="${X(I)}" y="${y0+16}" text-anchor="middle" fill="var(--accent-ink)" ${T}>${fmt(I,'A')}</text>
+   <text x="${X(0)+8}" y="${Y(E)-6}" fill="var(--muted)" ${T}>vazio</text>
+   <text x="${x0}" y="${y0-h-16}" fill="var(--muted)" ${T}>U</text><text x="${x0+w+12}" y="${y0+4}" fill="var(--muted)" ${T}>I</text>`;};
+  ['gE','gr','gRl'].forEach(i=>$('#'+i).addEventListener('input',gc));gc();
+}};
+
+S.joule={t:'Lei de Joule',html:()=>`
+<h2>Lei de Joule</h2>
+<p class="lead">Quando a corrente atravessa um condutor, parte da energia elétrica transforma-se em calor. É o efeito Joule: útil num aquecedor, indesejado num cabo ou num componente eletrónico.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Fórmulas</span>
+  <div class="formula">W = R × I² × t<small>W em joule (J) · R em Ω · I em A · t em s</small></div>
+  <div class="formula">Q = 0,24 × R × I² × t<small>calor em calorias (1 J ≈ 0,24 cal · 1 cal ≈ 4,18 J)</small></div>
+  <ul class="facts"><li>O calor é proporcional ao <b>quadrado</b> da corrente: se a corrente duplica, o calor quadruplica.</li><li>Conhecendo a tensão: W = (U² / R) × t.</li></ul></div>
+ <div class="panel"><span class="tag">Onde aparece</span><ul class="facts">
+  <li><b>Aproveitado:</b> aquecedores, termoacumuladores, ferros de engomar, secadores de cabelo, fusíveis.</li>
+  <li><b>Indesejado:</b> perdas nos cabos, aquecimento de componentes eletrónicos e de transformadores.</li>
+  <li>Por isso a secção dos cabos escolhe-se de acordo com a corrente: um cabo fino demais aquece.</li>
+  <li>O fusível funde quando a corrente passa do valor nominal: o calor R·I²·t derrete o filamento e abre o circuito.</li></ul></div>
+</div>
+<div class="panel tool"><span class="tag">Instrumento · Calor produzido e aquecimento de água</span>
+ <div class="row">${field('jR','Resistência R','Ω',26,'',['','k'])}${field('jI','Corrente I','A',8.8,'',['','m'])}<div class="fld"><label for="jt">Tempo (min)</label><input id="jt" value="10" inputmode="decimal" style="width:6em"></div><div class="fld"><label for="jm">Água a aquecer (L)</label><input id="jm" value="5" inputmode="decimal" style="width:6em"></div></div>
+ <div class="readout"><span class="big" id="jOut"></span><span class="sub" id="jSub"></span></div>
+ <p style="font-size:.85rem;color:var(--muted)">Para aquecer 1 L de água 1 °C são precisos cerca de 4186 J. O cálculo ignora as perdas de calor para o ambiente.</p>
+</div>
+<div class="grid2">
+ ${exercise('e5',{title:'Lei de Joule',text:'Uma resistência de <b>50 Ω</b> é percorrida por uma corrente de <b>2 A</b> durante <b>10 minutos</b>. Que energia se transforma em calor?',unit:'J',answer:120000,defP:'k',hint:'O tempo vai em segundos (600 s) e a corrente entra ao quadrado.',sol:['t = 10 × 60 = 600 s','W = R × I² × t = 50 × 2² × 600','W = 120 000 J = 120 kJ','Em calorias: 0,24 × 120 000 = 28 800 cal']})}
+ ${exercise('e6',{title:'Lei de Joule com tensão',text:'Uma resistência de aquecimento de <b>20 Ω</b> está ligada a <b>230 V</b>. Que energia dissipa em <b>1 minuto</b>?',unit:'J',answer:158700,defP:'k',hint:'Usa W = (U² / R) × t, com t = 60 s.',sol:['P = U² / R = 230² / 20 = 2645 W','W = P × t = 2645 × 60','W = 158 700 J ≈ 158,7 kJ']})}
+</div>`,init(){
+  const c=()=>{const R=get('jR'),I=get('jI'),t=nf($('#jt').value)*60,L=nf($('#jm').value);const P=R*I*I,W=P*t,dT=W/(4186*L);
+   $('#jOut').textContent='W = '+fmt(W,'J');
+   $('#jSub').textContent=`P = ${fmt(P,'W')} · ≈ ${fmt(W*0.24,'cal')} · a água sobe ≈ ${isFinite(dT)?dT.toFixed(1).replace('.',','):'—'} °C`;};
+  ['jR','jR-p','jI','jI-p','jt','jm'].forEach(i=>$('#'+i).addEventListener('input',c));c();
+}};
+
+S.energia={t:'Energia, potência e rendimento',html:()=>`
+<h2>Energia, potência e rendimento</h2>
+<p class="lead">A potência diz a rapidez com que um aparelho transforma energia. A energia é a potência acumulada ao longo do tempo, e é o que a fatura da eletricidade cobra.</p>
+<div class="grid2">
+ <div class="panel"><span class="tag">Potência elétrica</span>
+  <div class="formula">P = U × I<small>P em watt (W) · U em V · I em A</small></div>
+  <div class="formula">P = R × I² = U² / R</div>
+  <p style="font-size:.92rem;color:var(--muted)">1 W corresponde a 1 J transformado em cada segundo.</p></div>
+ <div class="panel"><span class="tag">Energia elétrica</span>
+  <div class="formula">W = P × t</div>
+  <div class="tbl"><table>
+   <tr><th>Unidade</th><th>Tipo</th><th>Equivalência</th></tr>
+   <tr><td>joule (J)</td><td>SI</td><td class="m">1 W × 1 s</td></tr>
+   <tr><td>watt-hora (Wh)</td><td>prática</td><td class="m">3600 J</td></tr>
+   <tr><td>quilowatt-hora (kWh)</td><td>prática</td><td class="m">3,6×10⁶ J</td></tr>
+  </table></div></div>
+</div>
+<div class="grid2">
+ <div class="panel tool"><span class="tag">Instrumento · Potência de um aparelho</span>
+  <div class="row">${field('pU','Tensão U','V',230,'',['','m','k'])}${field('pI','Corrente I','A',8.7,'',['','m'])}</div>
+  <div class="readout"><span class="big" id="pOut"></span><span class="sub" id="pSub"></span></div>
+ </div>
+ <div class="panel tool"><span class="tag">Instrumento · Consumo e custo</span>
+  <div class="row">${field('kP','Potência P','W',2,'k',['','k'])}<div class="fld"><label for="kh">Horas por dia</label><input id="kh" value="3" inputmode="decimal" style="width:5em"></div><div class="fld"><label for="kd">Dias</label><input id="kd" value="30" inputmode="decimal" style="width:5em"></div><div class="fld"><label for="kc">Preço €/kWh (exemplo)</label><input id="kc" value="0,16" inputmode="decimal" style="width:6em"></div></div>
+  <div class="readout"><span class="big" id="kOut"></span><span class="sub" id="kSub"></span></div>
+ </div>
+</div>
+<div class="grid2">
+ <div class="panel"><span class="tag">Rendimento</span>
+  <div class="formula">η = P<sub>u</sub> / P<sub>a</sub> × 100 %<small>P<sub>u</sub>: potência útil · P<sub>a</sub>: potência absorvida</small></div>
+  <ul class="facts"><li>P<sub>a</sub> = P<sub>u</sub> + P<sub>p</sub>: a diferença são as perdas (sobretudo calor, por efeito Joule, e atritos).</li><li>O rendimento é sempre inferior a 100 %.</li><li>Máquinas em cadeia: η<sub>total</sub> = η₁ × η₂ × …</li></ul></div>
+ <div class="panel tool"><span class="tag">Instrumento · Rendimento de uma máquina</span>
+  <div class="row">${field('rPa','Potência absorvida Pa','W',1500,'',['','k'])}${field('rPu','Potência útil Pu','W',1200,'',['','k'])}</div>
+  <div class="readout"><span class="big" id="rOut"></span><span class="sub" id="rSub"></span></div>
+  <div class="bar" role="img" id="rBar" aria-label="Divisão da potência absorvida"><span class="u" id="rbU"></span><span class="l" id="rbL"></span></div>
+  <div class="legend"><span><i style="background:var(--pcb)"></i>Potência útil</span><span><i style="background:var(--accent)"></i>Perdas</span></div>
+ </div>
+</div>
+<div class="grid2">
+ ${exercise('e7',{title:'Potência',text:'Um ferro de engomar ligado a <b>230 V</b> é percorrido por <b>10 A</b>. Qual a sua potência?',unit:'W',answer:2300,opts:['','k'],hint:'P = U × I.',sol:['P = U × I = 230 × 10','P = 2300 W = 2,3 kW']})}
+ ${exercise('e8',{title:'Energia',text:'Um aquecedor de <b>2 kW</b> funciona <b>3 horas por dia</b> durante <b>30 dias</b>. Que energia consome?',unit:'Wh',answer:180000,defP:'k',opts:['k','','M'],hint:'Conta as horas totais (3 × 30) e multiplica pela potência em kW.',sol:['t = 3 × 30 = 90 h','W = P × t = 2 kW × 90 h = 180 kWh','Em joules: 180 × 3,6×10⁶ = 6,48×10⁸ J','A 0,16 €/kWh: 180 × 0,16 = 28,80 €']})}
+ ${exercise('e9',{title:'Rendimento',text:'Um motor absorve <b>1500 W</b> da rede e fornece <b>1200 W</b> de potência mecânica. Qual o rendimento?',unit:'%',answer:80,opts:[''],hint:'Divide a potência útil pela absorvida e multiplica por 100.',sol:['η = Pu / Pa × 100','η = 1200 / 1500 × 100 = 80 %','Perdas: 1500 − 1200 = 300 W']})}
+</div>`,init(){
+  const p=()=>{const U=get('pU'),I=get('pI'),P=U*I;$('#pOut').textContent='P = '+fmt(P,'W');$('#pSub').textContent='Resistência equivalente R = U / I = '+fmt(U/I,'Ω');};
+  ['pU','pU-p','pI','pI-p'].forEach(i=>$('#'+i).addEventListener('input',p));p();
+  const k=()=>{const P=get('kP'),h=nf($('#kh').value)*nf($('#kd').value),kwh=P*h/1000,c=kwh*nf($('#kc').value);
+   $('#kOut').textContent=String(Number(kwh.toPrecision(5))).replace('.',',')+' kWh';
+   $('#kSub').textContent=`${String(h).replace('.',',')} h no total · ${fmt(kwh*3.6e6,'J')} · custo ≈ ${isFinite(c)?c.toFixed(2).replace('.',','):'—'} €`;};
+  ['kP','kP-p','kh','kd','kc'].forEach(i=>$('#'+i).addEventListener('input',k));k();
+  const r=()=>{const a=get('rPa'),u=get('rPu');const e=u/a*100,ok=a>0&&u>=0&&u<=a;
+   $('#rOut').textContent=ok?'η = '+e.toFixed(1).replace('.',',')+' %':'—';
+   $('#rSub').textContent=ok?'Perdas Pp = '+fmt(a-u,'W'):'A potência útil não pode ser maior do que a absorvida.';
+   $('#rbU').style.width=(ok?e:0)+'%';$('#rbL').style.width=(ok?100-e:0)+'%';};
+  ['rPa','rPa-p','rPu','rPu-p'].forEach(i=>$('#'+i).addEventListener('input',r));r();
+}};
+
+const QZ=[
+ ['Para medir a corrente num ramo, o amperímetro liga-se…',['em paralelo com o ramo','em série no ramo','aos terminais da fonte','com o circuito desligado'],1,'O amperímetro tem de ser atravessado pela corrente que mede: liga-se em série.'],
+ ['A resistência interna de um voltímetro deve ser…',['muito baixa','igual à do circuito','muito elevada','nula'],2,'Elevada, para desviar o mínimo de corrente e não alterar o circuito.'],
+ ['Em resistências ligadas em série, o que é igual em todas?',['A tensão','A corrente','A potência','A resistência'],1,'Só há um caminho, por isso a corrente é a mesma.'],
+ ['Em resistências ligadas em paralelo, o que é igual em todas?',['A tensão','A corrente','A potência','A carga'],0,'Todas estão ligadas aos mesmos dois pontos: a tensão é a mesma.'],
+ ['1 coulomb corresponde a quantos eletrões?',['1,6×10⁻¹⁹','6,25×10¹⁸','10⁶','6,02×10²³'],1,'1 C = 6,25×10¹⁸ eletrões.'],
+ ['Qual é o sentido convencional da corrente?',['Do − para o +','Do + para o −','Depende do material','Não tem sentido definido'],1,'Por convenção, do + para o −. Os eletrões vão no sentido contrário.'],
+ ['Se duplicares a secção de um fio, mantendo material e comprimento, a resistência…',['duplica','fica igual','reduz para metade','quadruplica'],2,'R = ρL/S: S no denominador, logo R reduz para metade.'],
+ ['Castanho, preto, vermelho, dourado corresponde a…',['10 Ω ±5 %','100 Ω ±5 %','1 kΩ ±5 %','10 kΩ ±10 %'],2,'1, 0, ×100 = 1000 Ω, dourado = ±5 %.'],
+ ['Quatro resistências de 1 kΩ em paralelo dão…',['4 kΩ','1 kΩ','500 Ω','250 Ω'],3,'Resistências iguais em paralelo: R/n = 1000/4 = 250 Ω.'],
+ ['Para medir uma resistência com o ohmímetro, é necessário…',['ligar o circuito','isolar o componente do circuito','ligar em série','usar a escala de amperes'],1,'Senão o ohmímetro mede também os componentes ligados em paralelo.'],
+ ['Uma lâmpada a 12 V é percorrida por 0,5 A. A sua resistência é…',['6 Ω','24 Ω','12,5 Ω','0,04 Ω'],1,'R = V/I = 12/0,5 = 24 Ω.'],
+ ['Três pilhas de 1,5 V em série aditiva fornecem…',['1,5 V','3 V','4,5 V','0,5 V'],2,'Em série aditiva somam-se: 3 × 1,5 = 4,5 V.'],
+ ['Pela Lei de Joule, se a corrente numa resistência duplicar, o calor produzido…',['duplica','quadruplica','fica igual','reduz para metade'],1,'W = R·I²·t: a corrente está ao quadrado, 2² = 4.'],
+ ['1 kWh equivale a…',['1000 J','3600 J','3,6×10⁶ J','36 J'],2,'1 kWh = 1000 W × 3600 s = 3,6×10⁶ J.'],
+ ['Um motor absorve 2000 W e fornece 1500 W. O rendimento é…',['75 %','133 %','50 %','25 %'],0,'η = 1500 / 2000 = 0,75 = 75 %.'],
+ ['Um gerador em vazio (sem carga) apresenta aos terminais…',['tensão nula','a sua f.e.m. E','a corrente de curto-circuito','metade de E'],1,'Sem corrente não há queda interna: U = E − r·0 = E.']];
+S.quiz={t:'Teste rápido',html:()=>`
+<h2>Teste rápido</h2>
+<p class="lead">${QZ.length} perguntas sobre todo o módulo. Escolhe uma opção: a correção aparece logo.</p>
+<div class="readout"><span class="big" id="qzS">0 / ${QZ.length}</span><span class="sub">respostas certas</span></div>
+<div class="quiz">${QZ.map((q,i)=>`<div class="q" data-q="${i}"><h3>${i+1}. ${q[0]}</h3><div class="opts">${q[1].map((o,j)=>`<button data-o="${j}">${o}</button>`).join('')}</div><div class="fb" hidden></div></div>`).join('')}</div>
+<div><button class="btn ghost" id="qzR">Recomeçar teste</button></div>`,init(){
+  let right=0;const upd=()=>$('#qzS').textContent=right+' / '+QZ.length;
+  document.querySelector('.quiz').onclick=e=>{const b=e.target.closest('[data-o]');if(!b||b.disabled)return;const box=b.closest('.q'),q=QZ[+box.dataset.q],k=+b.dataset.o;
+    box.querySelectorAll('[data-o]').forEach(x=>{x.disabled=true;if(+x.dataset.o===q[2])x.classList.add('right');});
+    const fb=box.querySelector('.fb');fb.hidden=false;if(k===q[2]){right++;fb.className='fb ok';fb.textContent='Certo. '+q[3];bump('q'+box.dataset.q);}else{b.classList.add('wrong');fb.className='fb bad';fb.textContent=q[3];}upd();};
+  $('#qzR').onclick=()=>show('quiz',true);
+}};
+
+// ---------- navegação ----------
+const ORDER=['grandezas','corrente','resistividade','cores','ohm','joule','associacao','medida','energia','geradores','quiz'];
+$('#nav').innerHTML=ORDER.map((k,i)=>`<button data-go="${k}"><span class="n">${String(i+1).padStart(2,'0')}</span><span>${S[k].t}</span></button>`).join('')+`<div class="score">Exercícios resolvidos nesta sessão<br><b id="scoreN">0</b></div>`;
+function show(k){if(!S[k])k='grandezas';$('#main').innerHTML=`<section class="topic" id="sec-${k}">${S[k].html()}${navFoot(k)}</section>`;S[k].init();
+  document.querySelectorAll('[data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===k));
+  try{localStorage.setItem('ufcd6007-tab',k)}catch(e){}
+  try{history.replaceState(null,'','#'+k)}catch(e){}}
+function navFoot(k){const i=ORDER.indexOf(k);return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:16px">${i>0?`<button class="btn ghost" data-go="${ORDER[i-1]}">← ${S[ORDER[i-1]].t}</button>`:'<span></span>'}${i<ORDER.length-1?`<button class="btn" data-go="${ORDER[i+1]}">${S[ORDER[i+1]].t} →</button>`:''}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){show(b.dataset.go);if(b.closest('#main'))window.scrollTo({top:0});}});
+let start=(location.hash||'').slice(1);if(!S[start]){try{start=localStorage.getItem('ufcd6007-tab')||''}catch(e){start=''}}
+show(start);
+</script>
